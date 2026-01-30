@@ -27,7 +27,7 @@ w_mean_low, w_err_low = get_weighted_stats(low_df['hubble_residual'], low_df['MU
 w_mean_high, w_err_high = get_weighted_stats(high_df['hubble_residual'], high_df['MUERR'])
 p_vals = run_stats(low_df['hubble_residual'], high_df['hubble_residual'])
 
-# 4. PLOTTING
+# PLOTTING
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
 
 # Plot Residual vs Redshift

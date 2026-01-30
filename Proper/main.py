@@ -3,13 +3,13 @@ import numpy as np
 from data_handler import download_file, load_snana_format
 from analysis_tools import calculate_physics, get_weighted_stats, run_stats
 
-# 1. LOAD DATA
+# LOAD DATA
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
 df = load_snana_format(hd_path).merge(load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c']], on='CID')
 df = df[df['PROBIA_BEAMS'] > 0.95].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR'])
 
-# 2. PHYSICS & SCATTER COMPARISON
+# PHYSICS & SCATTER COMPARISON
 df = calculate_physics(df)
 scatter_no_mass = np.std(df['hubble_residual'])
 
@@ -19,7 +19,7 @@ if 'MU' in df.columns:
     reduction = (scatter_no_mass - scatter_with_mass) / scatter_no_mass * 100
     print(f"Scatter Reduction: {reduction:.2f}%")
 
-# 3. MASS STEP ANALYSIS (WEIGHTED)
+# MASS STEP ANALYSIS (WEIGHTED)
 low_df = df[df['HOST_LOGMASS'] < 10]
 high_df = df[df['HOST_LOGMASS'] >= 10]
 
@@ -30,7 +30,7 @@ p_vals = run_stats(low_df['hubble_residual'], high_df['hubble_residual'])
 # 4. PLOTTING
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
 
-# Plot 1: Residual vs Redshift
+# Plot Residual vs Redshift
 ax1.errorbar(df['zHD'], df['hubble_residual'], yerr=df['MUERR'], fmt='o', alpha=0.3, color='blue', zorder = 1)
 ax1.axhline(0, color='black', linestyle='--', zorder = 2, label = 'Zero residual')
 ax1.set_title(f'Hubble Residual vs Redshift (Scatter: {scatter_no_mass:.3f} mag)')
@@ -38,7 +38,7 @@ ax1.set_xlabel('Redshift ')
 ax1.set_ylabel('Hubble Residual (mag)')
 ax1.legend()
 
-# Plot 2: Mass Step
+# Plot Mass Step
 ax2.errorbar(df['HOST_LOGMASS'], df['hubble_residual'], yerr=df['MUERR'], fmt='o', alpha=0.2, color='gray', zorder = 1 )
 ax2.hlines(w_mean_low, 8, 10, colors='red', lw=2, label=f'Low Mass Mean: {w_mean_low:.3f}', zorder = 3)
 ax2.hlines(w_mean_high, 10, 12, colors='orange', lw=2, label=f'High Mass Mean: {w_mean_high:.3f}', zorder = 3)

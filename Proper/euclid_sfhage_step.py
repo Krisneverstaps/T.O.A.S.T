@@ -40,6 +40,7 @@ df = calculate_physics(df)
 age_split = df["SFH_AGE"].median()
 low_df = df[df["SFH_AGE"] < age_split]
 high_df = df[df["SFH_AGE"] >= age_split]
+
 w_mean_low, w_err_low = get_weighted_stats(low_df["hubble_residual"], low_df["MUERR"])
 w_mean_high, w_err_high = get_weighted_stats(high_df["hubble_residual"], high_df["MUERR"])
 age_step = w_mean_high - w_mean_low

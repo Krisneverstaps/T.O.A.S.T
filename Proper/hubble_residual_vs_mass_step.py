@@ -8,7 +8,7 @@ from analysis_tools import calculate_physics, get_weighted_stats, run_stats, bin
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
 df = load_snana_format(hd_path).merge(load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c']], on='CID')
-df = df[df['PROBIA_BEAMS'] > 0.95].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR'])
+df = df[df['PROBIA_BEAMS'] > 0.999999].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR'])
 
 # PHYSICS
 df = calculate_physics(df)

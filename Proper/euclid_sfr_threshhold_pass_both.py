@@ -1,0 +1,98 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from data_handler import download_file, load_snana_format
+from analysis_tools import calculate_physics, get_weighted_stats, run_stats, binned_weighted_mean
+
+# EUCLID CSV PATH
+SCRIPT_DIR = Path(__file__).resolve().parent
+ROOT_DIR = SCRIPT_DIR.parent
+euclid_path = (ROOT_DIR / "data" / "Q1 euclid data.csv").resolve()
+
+# LOAD EUCLID DATA
+df_euclid = pd.read_csv(euclid_path)
+df_euclid["DES_ID_x"] = pd.to_numeric(df_euclid["DES_ID_x"], errors="coerce")
+df_euclid["zHD"] = pd.to_numeric(df_euclid["zHD"], errors="coerce")
+df_euclid["SFR"] = pd.to_numeric(df_euclid["phz_pp_mode_sfr"], errors="coerce")
+
+# LOAD DES DATA
+hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
+meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
+df_hd = load_snana_format(hd_path)
+df_meta = load_snana_format(meta_path)
+df_hd["CID_num"] = pd.to_numeric(df_hd["CID"], errors="coerce")
+df_hd = df_hd.dropna(subset=["CID_num", "zHD", "MU", "MUERR"]).copy()
+df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.95]
+
+# MERGE EUCLID WITH DES (DES_ID_x = CID)
+df = df_euclid[["DES_ID_x", "SFR"]].merge(
+    df_hd[["CID_num", "CID", "zHD", "MU", "MUERR", "PROBIA_BEAMS"]],
+    left_on="DES_ID_x", right_on="CID_num", how="inner"
+)
+df = df.merge(df_meta[["CID", "mB", "x1", "c"]], on="CID", how="left")
+df = df.dropna(subset=["zHD", "mB", "x1", "c", "SFR", "MUERR"])
+
+# PHYSICS
+df = calculate_physics(df)
+
+# ------------------------------------------------------------
+# REQUIRE BOTH t-test AND KS-test SIGNIFICANCE
+# ------------------------------------------------------------
+alpha = 0.05
+min_n_per_bin = 5
+
+sfr_cuts = np.linspace(df["SFR"].min(), df["SFR"].quantile(0.2), 100)
+
+significant_cut = None
+significant_t = None
+significant_t_p = None
+significant_ks = None
+significant_ks_p = None
+
+for cut in sfr_cuts:
+    df_cut = df[df["SFR"] > cut]
+
+    if len(df_cut) < 2 * min_n_per_bin:
+        continue
+
+    sfr_split = df_cut["SFR"].median()
+    low_df = df_cut[df_cut["SFR"] < sfr_split]
+    high_df = df_cut[df_cut["SFR"] >= sfr_split]
+
+    if len(low_df) < min_n_per_bin or len(high_df) < min_n_per_bin:
+        continue
+
+    stats_tmp = run_stats(
+        low_df["hubble_residual"],
+        high_df["hubble_residual"]
+    )
+
+    t_pass = stats_tmp["t_p"] < alpha
+    ks_pass = stats_tmp["ks_p"] < alpha
+
+    if t_pass and ks_pass:
+        significant_cut = cut
+        significant_t = stats_tmp["t_stat"]
+        significant_t_p = stats_tmp["t_p"]
+        significant_ks = stats_tmp["ks_stat"]
+        significant_ks_p = stats_tmp["ks_p"]
+        break
+
+# REPORT
+print()
+print("=" * 60)
+print("SFR lower-cut significance scan (t + KS required)")
+print("=" * 60)
+
+if significant_cut is None:
+    print("Result: never significant")
+else:
+    print(f"First significant at SFR > {significant_cut:.2f}")
+    print(f"t-statistic:  {significant_t:.4f}")
+    print(f"t p-value:    {significant_t_p:.6f}")
+    print(f"KS statistic: {significant_ks:.4f}")
+    print(f"KS p-value:   {significant_ks_p:.6f}")
+
+print("=" * 60)
+

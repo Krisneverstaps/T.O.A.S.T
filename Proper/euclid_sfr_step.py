@@ -23,7 +23,7 @@ df_hd = load_snana_format(hd_path)
 df_meta = load_snana_format(meta_path)
 df_hd["CID_num"] = pd.to_numeric(df_hd["CID"], errors="coerce")
 df_hd = df_hd.dropna(subset=["CID_num", "zHD", "MU", "MUERR"]).copy()
-df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.95]
+df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.999999]
 
 # MERGE EUCLID WITH DES (DES_ID_x = CID)
 df = df_euclid[["DES_ID_x", "SFR"]].merge(
@@ -35,6 +35,8 @@ df = df.dropna(subset=["zHD", "mB", "x1", "c", "SFR", "MUERR"])
 
 # PHYSICS
 df = calculate_physics(df)
+
+df = df[df["SFR"] > -6.9]
 
 # SFR STEP (split at median SFR)
 sfr_split = df["SFR"].median()

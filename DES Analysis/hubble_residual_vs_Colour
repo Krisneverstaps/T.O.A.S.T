@@ -73,7 +73,7 @@ ax.scatter(df['HOST_COLOR'], df['hubble_residual'], alpha=0.2, color='gray', s=1
 ax.errorbar(bin_centers[valid], bin_means[valid], yerr=bin_errs[valid], fmt='o', color='blue',
             capsize=4, capthick=2, markersize=8, label='Binned weighted mean')
 
-# Use actual data limits for horizontal lines
+# Horizontal lines
 x_min, x_max = df['HOST_COLOR'].min(), df['HOST_COLOR'].max()
 ax.hlines(w_mean_low, x_min, color_split, colors='red', lw=2, label=f'Low Color: {w_mean_low:.3f} ± {w_err_low:.3f}')
 ax.hlines(w_mean_high, color_split, x_max, colors='orange', lw=2, label=f'High Color: {w_mean_high:.3f} ± {w_err_high:.3f}')

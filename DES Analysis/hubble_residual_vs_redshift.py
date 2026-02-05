@@ -8,7 +8,7 @@ from analysis_tools import OMEGA_M, binned_weighted_mean
 # LOAD DATA (HD file only — use MU from HD so residuals are centered at zero, like lab 23.1)
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 df = load_snana_format(hd_path)
-df = df[df["PROBIA_BEAMS"] > 0.99999999999].dropna(subset=["zHD", "MU", "MUERR"])
+df = df[df["PROBIA_BEAMS"] > 0.95].dropna(subset=["zHD", "MU", "MUERR"])
 
 # HUBBLE RESIDUAL = MU - mu_expected (same as lab 23.1; points center at zero)
 cosmo = FlatLambdaCDM(H0=70, Om0=OMEGA_M)

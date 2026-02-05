@@ -17,7 +17,7 @@ def calculate_physics(df, alpha=ALPHA, beta=BETA, m0=M0_AVG, omega_m=OMEGA_M):
     df['mu_expected'] = cosmo.distmod(df['zHD']).value
 
     # Recalculate MU without mass correction: μ = mB + α*x1 - β*c - M0 (no γ*step)
-    df['mu_no_mass'] = df['mB'] + (alpha * df['x1']) - (beta * df['c']) - m0
+    df['mu_no_mass'] = -2.5*np.log10(df['x0']) + (alpha * df['x1']) - (beta * df['c']) - m0
 
     # Residual (observed minus expected)
     df['hubble_residual'] = df['mu_no_mass'] - df['mu_expected']

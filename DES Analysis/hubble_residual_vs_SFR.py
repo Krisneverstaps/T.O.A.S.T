@@ -7,13 +7,13 @@ from analysis_tools import calculate_physics, get_weighted_stats, run_stats, bin
 # LOAD DATA
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
-df = load_snana_format(hd_path).merge(load_snana_format(meta_path)[['CID', 'HOST_LOGSFR', 'mB', 'x1', 'c']], on='CID')
-df = df[df['PROBIA_BEAMS'] > 0.999999].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGSFR', 'MUERR'])
+df = load_snana_format(hd_path).merge(load_snana_format(meta_path)[['CID', 'HOST_LOGSFR', 'mB', 'x1', 'c', "x0"]], on='CID')
+df = df[df['PROBIA_BEAMS'] > 0.95].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGSFR', 'MUERR', "x0"])
 
 # PHYSICS
 df = calculate_physics(df)
 
-# SFR STEP (SPLIT AT MEDIAN)
+# SFR STEP 
 sfr_split = df['HOST_LOGSFR'].median()
 low_df = df[df['HOST_LOGSFR'] < sfr_split]
 high_df = df[df['HOST_LOGSFR'] >= sfr_split]
@@ -72,7 +72,7 @@ ax.scatter(df['HOST_LOGSFR'], df['hubble_residual'], alpha=0.2, color='gray', s=
 ax.errorbar(bin_centers[valid], bin_means[valid], yerr=bin_errs[valid], fmt='o', color='blue',
             capsize=4, capthick=2, markersize=8, label='Binned weighted mean')
 
-# Use actual data limits for horizontal lines
+# horizontal lines
 x_min, x_max = df['HOST_LOGSFR'].min(), df['HOST_LOGSFR'].max()
 ax.hlines(w_mean_low, x_min, sfr_split, colors='red', lw=2, label=f'Low SFR: {w_mean_low:.3f} ± {w_err_low:.3f}')
 ax.hlines(w_mean_high, sfr_split, x_max, colors='orange', lw=2, label=f'High SFR: {w_mean_high:.3f} ± {w_err_high:.3f}')

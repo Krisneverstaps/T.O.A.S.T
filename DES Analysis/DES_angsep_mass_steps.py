@@ -9,27 +9,27 @@ from analysis_tools import calculate_physics, get_weighted_stats, run_stats, bin
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
 df = load_snana_format(hd_path).merge(
-    load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'HOST_ANGSEP']],
+    load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'HOST_ANGSEP', "x0"]],
     on='CID'
 )
-df = df[df['PROBIA_BEAMS'] > 0.95].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR', 'HOST_ANGSEP'])
+df = df[df['PROBIA_BEAMS'] > 0.999999].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR', 'HOST_ANGSEP', "x0"])
 
 # PHYSICS
 df = calculate_physics(df)
 
 # SPLIT DATA BASED ON ANGULAR SEPARATION
-angsep_threshold = df["HOST_ANGSEP"].median()  # arcminutes
+# angsep_threshold = df["HOST_ANGSEP"].median()  # arcminutes
 
-age_split = df["HOST_ANGSEP"].median()
-close_df = df[df["HOST_ANGSEP"] < angsep_threshold]
-far_df = df[df["HOST_ANGSEP"] >= angsep_threshold]
+# age_split = df["HOST_ANGSEP"].median()
+# close_df = df[df["HOST_ANGSEP"] < angsep_threshold]
+# far_df = df[df["HOST_ANGSEP"] >= angsep_threshold]
 
-# Uncomment to use the lower and upper quartiles instead of the median
-# q25 = df['HOST_ANGSEP'].quantile(0.25)
-# close_df = df[df['HOST_ANGSEP'] <= q25]
+#Uncomment to use the lower and upper quartiles instead of the median
+q25 = df['HOST_ANGSEP'].quantile(0.25)
+close_df = df[df['HOST_ANGSEP'] <= q25]
 
-# q75 = df['HOST_ANGSEP'].quantile(0.75)
-# far_df = df[df['HOST_ANGSEP'] >= q75]
+q75 = df['HOST_ANGSEP'].quantile(0.75)
+far_df = df[df['HOST_ANGSEP'] >= q75]
 
 def compute_mass_step(group_df, title_suffix):
     """Compute and plot Hubble residual vs host mass for a given group."""
@@ -48,18 +48,55 @@ def compute_mass_step(group_df, title_suffix):
     valid = ~np.isnan(bin_means)
 
     # PRINT SUMMARY
-    print("="*60)
+    print("=" * 60)
     print(f"Hubble Residual vs Host Mass ({title_suffix})")
-    print("="*60)
+    print("=" * 60)
+
+    print(f"HOST_LOGMASS range: "
+          f"{group_df['HOST_LOGMASS'].min():.2f} -- "
+          f"{group_df['HOST_LOGMASS'].max():.2f}")
     print(f"Total SNe: {len(group_df)}")
-    print(f"Low-mass hosts (<10):  {len(low_df)}")
-    print(f"High-mass hosts (>=10): {len(high_df)}")
+    print()
+
+    print(f"Low-mass hosts (log M* < 10):  {len(low_df)} SNe")
+    print(f"High-mass hosts (log M* >= 10): {len(high_df)} SNe")
+    print()
+
     print(f"Mean residual (low-mass):  {w_mean_low:+.4f} ± {w_err_low:.4f} mag")
     print(f"Mean residual (high-mass): {w_mean_high:+.4f} ± {w_err_high:.4f} mag")
-    print(f"Mass step (high - low):    {mass_step:+.4f} mag")
-    print(f"Two-sample t-test: t={stats['t_stat']:.4f}, p={stats['t_p']:.6f}")
-    print(f"KS test: KS={stats['ks_stat']:.4f}, p={stats['ks_p']:.6f}")
-    print("="*60)
+    print(f"Mass step (high − low):    {mass_step:+.4f} mag")
+    print()
+
+    print("Two-sample t-test:")
+    print(f"  t-statistic: {stats['t_stat']:.4f}")
+    print(f"  p-value:     {stats['t_p']:.6f}")
+    if stats['t_p'] < 0.05:
+        print("  → Statistically significant (p < 0.05)")
+    else:
+        print("  → Not statistically significant (p ≥ 0.05)")
+    print()
+
+    print("Kolmogorov–Smirnov test:")
+    print(f"  KS statistic: {stats['ks_stat']:.4f}")
+    print(f"  p-value:      {stats['ks_p']:.6f}")
+    if stats['ks_p'] < 0.05:
+        print("  Distributions differ (p < 0.05)")
+    else:
+        print("  Distributions do not differ significantly (p ≥ 0.05)")
+    print()
+
+    print("Binned weighted means:")
+    print(f"  {'Bin center (log M*)':<22}"
+          f"{'Weighted mean (mag)':<22}"
+          f"{'Uncertainty (mag)':<18}")
+    print("-" * 65)
+    for i in np.where(valid)[0]:
+        print(f"  {bin_centers[i]:<22.2f}"
+              f"{bin_means[i]:<22.4f}"
+              f"{bin_errs[i]:<18.4f}")
+
+    print("=" * 60)
+
 
     # PLOT
     fig, ax = plt.subplots(figsize=(8, 5))

@@ -147,6 +147,6 @@ for i, row in summary_df.iterrows():
 
 out_dir = ROOT_DIR / "outputs"
 out_dir.mkdir(exist_ok=True)
-plt.savefig(out_dir / "MCMC_Corner_Plot.png", dpi=150)
+plt.savefig(out_dir / "MCMC_Corner_PlotNEW.png", dpi=150)
 plt.show()
 

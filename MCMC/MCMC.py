@@ -19,7 +19,7 @@ meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
 # LOAD DES
 df_hd = load_snana_format(hd_path).query("PROBIA_BEAMS > 0.999999")
 df_hd["CID_num"] = pd.to_numeric(df_hd["CID"], errors="coerce")
-df_meta = load_snana_format(meta_path)[['CID', 'mB', 'x1', 'c', 'x0']]
+df_meta = load_snana_format(meta_path)[['CID', 'mB', 'x1', 'c', 'x0', 'biasCor_mu']]
 
 # DICTIONARY FOR PROPERTIES
 e_cols = {
@@ -83,8 +83,8 @@ splits = np.median(X, axis=0)
 data = (X, y, yerr, splits)
 
 # Initialise MCMC
-nwalkers = 500
-niter = 1024
+nwalkers = 64
+niter = 30000
 # Initial guesses,  tiny steps (0.02) and zero offset
 initial = np.array([0.02, 0.02, 0.02, 0.0])
 ndim = len(initial)
@@ -94,11 +94,13 @@ p0 = [initial + 1e-5 * np.random.randn(ndim) for i in range(nwalkers)]
 def main(p0, nwalkers, niter, ndim, lnprob, data):
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=data)
     print("Running burn-in...")
-    p0, _, _ = sampler.run_mcmc(p0, 500) # 500 step burn-in
+    p0, _, _ = sampler.run_mcmc(p0, 5000) # 500 step burn-in
     sampler.reset()
     print("Running production...")
     pos, prob, state = sampler.run_mcmc(p0, niter)
-    return sampler, pos, prob, state
+    tau = sampler.get_autocorr_time()
+    print(tau)
+    return sampler, pos, prob, state 
 
 new_sampler, newpos, newprob, newstate = main(p0, nwalkers, niter, ndim, lnprob, data)
 new_samples = new_sampler.flatchain
@@ -147,3 +149,4 @@ out_dir = ROOT_DIR / "outputs"
 out_dir.mkdir(exist_ok=True)
 plt.savefig(out_dir / "MCMC_Corner_Plot.png", dpi=150)
 plt.show()
+

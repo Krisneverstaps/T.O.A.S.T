@@ -9,7 +9,7 @@ from analysis_tools import calculate_physics, get_weighted_stats, run_stats, bin
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
 df = load_snana_format(hd_path).merge(
-    load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'HOST_ANGSEP', "x0"]],
+    load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'HOST_ANGSEP', "x0", "biasCor_mu"]],
     on='CID'
 )
 df = df[df['PROBIA_BEAMS'] > 0.999999].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR', 'HOST_ANGSEP', "x0"])
@@ -71,9 +71,9 @@ def compute_mass_step(group_df, title_suffix):
     print(f"  t-statistic: {stats['t_stat']:.4f}")
     print(f"  p-value:     {stats['t_p']:.6f}")
     if stats['t_p'] < 0.05:
-        print("  → Statistically significant (p < 0.05)")
+        print("  Statistically significant (p < 0.05)")
     else:
-        print("  → Not statistically significant (p ≥ 0.05)")
+        print("  Not statistically significant (p ≥ 0.05)")
     print()
 
     print("Kolmogorov–Smirnov test:")

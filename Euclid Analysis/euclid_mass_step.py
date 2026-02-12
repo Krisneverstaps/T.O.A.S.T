@@ -33,7 +33,7 @@ df = df_euclid[["DES_ID_x", "HOST_LOGMASS"]].merge(
     df_hd[["CID_num", "CID", "zHD", "MU", "MUERR", "PROBIA_BEAMS"]],
     left_on="DES_ID_x", right_on="CID_num", how="inner"
 )
-df = df.merge(df_meta[["CID", "mB", "x1", "c", "x0"]], on="CID", how="left")
+df = df.merge(df_meta[["CID", "mB", "x1", "c", "x0", "biasCor_mu"]], on="CID", how="left")
 df = df.dropna(subset=["zHD", "mB", "x1", "c", "HOST_LOGMASS", "MUERR", "x0"])
 
 # PHYSICS

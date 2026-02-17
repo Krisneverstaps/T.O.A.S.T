@@ -7,7 +7,7 @@ from analysis_tools import calculate_physics, get_weighted_stats, run_stats, bin
 # LOAD DATA
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
-df = load_snana_format(hd_path).merge(load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'x0', 'biasCor_mu']], on='CID')
+df = load_snana_format(hd_path).merge(load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'x0', 'biasCor_mu', 'biasCorErr_mu']], on='CID')
 df = df[df['PROBIA_BEAMS'] > 0.0].dropna(subset=['zHD', 'mB', 'x1', 'c', 'x0', 'HOST_LOGMASS', 'MUERR'])
 
 # PHYSICS
@@ -17,8 +17,8 @@ df = calculate_physics(df)
 low_df = df[df['HOST_LOGMASS'] < 10]
 high_df = df[df['HOST_LOGMASS'] >= 10]
 
-w_mean_low, w_err_low = get_weighted_stats_with_prob(low_df['hubble_residual'], low_df['MUERR'], low_df['PROBIA_BEAMS'])
-w_mean_high, w_err_high = get_weighted_stats_with_prob(high_df['hubble_residual'], high_df['MUERR'], high_df['PROBIA_BEAMS'])
+w_mean_low, w_err_low = get_weighted_stats_with_prob(low_df['hubble_residual'], low_df['MUERR'], low_df['PROBIA_BEAMS'], low_df['biasCorErr_mu'])
+w_mean_high, w_err_high = get_weighted_stats_with_prob(high_df['hubble_residual'], high_df['MUERR'], high_df['PROBIA_BEAMS'], high_df['biasCorErr_mu'])
 mass_step = w_mean_high - w_mean_low
 stats = run_stats(low_df['hubble_residual'], high_df['hubble_residual'])
 
@@ -28,6 +28,7 @@ bin_centers, bin_means, bin_errs = binned_weighted_mean_with_prob(
     df['hubble_residual'].values, 
     df['MUERR'].values, 
     df['PROBIA_BEAMS'].values, 
+    df['biasCorErr_mu'].values,
     bins=6
 )
 valid = ~np.isnan(bin_means)

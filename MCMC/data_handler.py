@@ -2,6 +2,7 @@ import urllib.request
 import urllib.error
 import pandas as pd
 from pathlib import Path
+import numpy as np
 
 GITHUB_REPO = "des-science/DES-SN5YR"
 GITHUB_BRANCH = "main"
@@ -41,8 +42,6 @@ def load_snana_format(filepath):
                     data_rows.append(values[:len(var_names)])
     
     df = pd.DataFrame(data_rows, columns=var_names)
-    
-    # columns that should be numbers will be numbers
 
     for col in df.columns:
         if col != 'CID': # ID as a string
@@ -50,5 +49,12 @@ def load_snana_format(filepath):
             
     # Fill any missing data with NaN 
     df = df.dropna(how='all') 
-    
     return df
+
+def load_cov_npz(filepath):
+    d = np.load(filepath)
+    n = int(d["nsn"][0])
+    inv_cov = np.zeros((n, n))
+    inv_cov[np.triu_indices(n)] = d["cov"]
+    inv_cov[np.tril_indices(n, -1)] = inv_cov.T[np.tril_indices(n, -1)]
+    return inv_cov

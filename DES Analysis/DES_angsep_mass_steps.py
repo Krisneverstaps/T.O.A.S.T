@@ -9,27 +9,27 @@ from analysis_tools import calculate_physics, get_weighted_stats, run_stats, bin
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
 df = load_snana_format(hd_path).merge(
-    load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'HOST_ANGSEP', "x0", "biasCor_mu"]],
+    load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'HOST_DDLR', "x0", "biasCor_mu"]],
     on='CID'
 )
-df = df[df['PROBIA_BEAMS'] > 0.999999].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR', 'HOST_ANGSEP', "x0"])
+df = df[df['PROBIA_BEAMS'] > 0.999999].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR', 'HOST_DDLR', "x0"])
 
 # PHYSICS
 df = calculate_physics(df)
 
 # SPLIT DATA BASED ON ANGULAR SEPARATION
-# angsep_threshold = df["HOST_ANGSEP"].median()  # arcminutes
+# DDLR_threshold = df["HOST_DDLR"].median()  # arcminutes
 
-# age_split = df["HOST_ANGSEP"].median()
-# close_df = df[df["HOST_ANGSEP"] < angsep_threshold]
-# far_df = df[df["HOST_ANGSEP"] >= angsep_threshold]
+# age_split = df["HOST_DDLR"].median()
+# close_df = df[df["HOST_DDLR"] < DDLR_threshold]
+# far_df = df[df["HOST_DDLR"] >= DDLR_threshold]
 
 #Uncomment to use the lower and upper quartiles instead of the median
-q25 = df['HOST_ANGSEP'].quantile(0.25)
-close_df = df[df['HOST_ANGSEP'] <= q25]
+q25 = df['HOST_DDLR'].quantile(0.25)
+close_df = df[df['HOST_DDLR'] <= q25]
 
-q75 = df['HOST_ANGSEP'].quantile(0.75)
-far_df = df[df['HOST_ANGSEP'] >= q75]
+q75 = df['HOST_DDLR'].quantile(0.75)
+far_df = df[df['HOST_DDLR'] >= q75]
 
 def compute_mass_step(group_df, title_suffix):
     """Compute and plot Hubble residual vs host mass for a given group."""

@@ -19,7 +19,7 @@ meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
 # LOAD DES
 df_hd = load_snana_format(hd_path).query("PROBIA_BEAMS > 0.999999")
 df_hd["CID_num"] = pd.to_numeric(df_hd["CID"], errors="coerce")
-df_meta = load_snana_format(meta_path)[['CID', 'mB', 'x1', 'c', 'x0', 'biasCor_mu']]
+df_meta = load_snana_format(meta_path)[['CID', 'mB', 'x1', 'c', 'x0', 'biasCor_mu', 'biasCorErr_mu']]
 
 # DICTIONARY FOR PROPERTIES
 e_cols = {
@@ -42,7 +42,8 @@ df = calculate_physics(df)
 # DATA ARRAYS 
 X = df[['LOGMASS', 'AGE', 'METALLICITY']].values
 y = df['hubble_residual'].values
-yerr = df['MUERR'].values
+df['total_err'] = np.sqrt(df['MUERR']**2 + df['biasCorErr_mu']**2)
+yerr = df['total_err'].values
 splits = np.median(X, axis=0)
 data = (X, y, yerr, splits)
 
@@ -84,7 +85,7 @@ data = (X, y, yerr, splits)
 
 # Initialise MCMC
 nwalkers = 64
-niter = 30000
+niter = 15000
 # Initial guesses,  tiny steps (0.02) and zero offset
 initial = np.array([0.02, 0.02, 0.02, 0.0])
 ndim = len(initial)

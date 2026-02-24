@@ -20,10 +20,10 @@ def compute_dlr_vis_row(row):
     sn_dec = row["declination"]
 
     # parameters
-    a = row["sersic_sersic_vis_radius"]          # semi-major axis
+    circ = row["sersic_sersic_vis_radius"]          # semi-major axis
     q = row["sersic_sersic_vis_axis_ratio"]      # axis ratio b/a
     pa_deg = row["sersic_angle"]                 # degrees (East of North)
-
+    a = circ / np.sqrt(q)
     # If invalid, returns NaN
     if pd.isna(a) or pd.isna(q) or a <= 0 or q <= 0:
         return np.nan
@@ -36,8 +36,8 @@ def compute_dlr_vis_row(row):
     # Rotate into galaxy frame
     theta = np.radians(pa_deg)
 
-    x_prime = delta_ra * np.cos(theta) + delta_dec * np.sin(theta)
-    y_prime = -delta_ra * np.sin(theta) + delta_dec * np.cos(theta)
+    x_prime = delta_ra * np.sin(theta) + delta_dec * np.cos(theta)
+    y_prime = delta_ra * np.cos(theta) - delta_dec * np.sin(theta)
 
     # Semi-minor axis
     b = a * q
@@ -45,11 +45,13 @@ def compute_dlr_vis_row(row):
     # Elliptical normalised radius
     r_ellipse = np.sqrt((x_prime / a)**2 + (y_prime / b)**2)
 
+
+
     return r_ellipse
 
 # Apply to full data
 def add_dlr_column(df):
-    df["DLR"] = df.apply(compute_dlr_vis_row, axis=1)
+    df["DDLR"] = df.apply(compute_dlr_vis_row, axis=1)
     return df
 
 
@@ -62,6 +64,6 @@ if __name__ == "__main__":
 
     df = add_dlr_column(df)
 
-    print(df[["object_id", "DLR"]].head())
+    print(df[["object_id", "DDLR"]].head())
 
-    df.to_csv("with_dlr.csv", index=False)
+    df.to_csv("EuclidDDLR.csv", index=False)

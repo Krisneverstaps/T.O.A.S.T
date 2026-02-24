@@ -9,7 +9,7 @@ from analysis_tools import calculate_physics, get_weighted_stats, run_stats, bin
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = SCRIPT_DIR.parent
 euclid_path = (ROOT_DIR / "data" / "Q1 euclid data.csv").resolve()
-euclid_morph_path = (ROOT_DIR / "data" / "with_dlr.csv").resolve()
+euclid_morph_path = (ROOT_DIR / "data" / "EuclidDDLR.csv").resolve()
 
 # LOAD EUCLID DATA
 df_euclid = pd.read_csv(euclid_path)
@@ -27,12 +27,12 @@ df_morph = pd.read_csv(euclid_morph_path, thousands=',')
 df_morph["DES_ID_x"] = df_morph["DES_ID_x"].astype(str).str.replace('"', '').str.strip()
 df_morph["DES_ID_x"] = pd.to_numeric(df_morph["DES_ID_x"], errors="coerce")
 
-# Convert DLR to numeric 
-df_morph["DLR"] = pd.to_numeric(df_morph["DLR"], errors="coerce")
+# Convert DDLR to numeric 
+df_morph["DDLR"] = pd.to_numeric(df_morph["DDLR"], errors="coerce")
 
-# ADD DLR TO EUCLID DATA 
+# ADD DDLR TO EUCLID DATA 
 df_euclid = df_euclid[["DES_ID_x", "HOST_LOGMASS"]].merge(
-    df_morph[["DES_ID_x", "DLR"]], 
+    df_morph[["DES_ID_x", "DDLR"]], 
     on="DES_ID_x", 
     how="inner"
 )
@@ -46,38 +46,38 @@ df_meta = load_snana_format(meta_path)
 # Prepare DES HD
 df_hd["CID_num"] = pd.to_numeric(df_hd["CID"], errors="coerce")
 df_hd = df_hd.dropna(subset=["CID_num", "zHD", "MU", "MUERR"]).copy()
-df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.999999]
+df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.95]
 
 
 # Merge Euclid with DES HD
-df = df_euclid[["DES_ID_x", "HOST_LOGMASS", "DLR"]].merge(
+df = df_euclid[["DES_ID_x", "HOST_LOGMASS", "DDLR"]].merge(
     df_hd[["CID_num", "CID", "zHD", "MU", "MUERR", "PROBIA_BEAMS"]],
     left_on="DES_ID_x", right_on="CID_num", how="inner"
 )
 
 # Merge with Metadata
 df = df.merge(df_meta[["CID", "mB", "x1", "c", "x0", "biasCor_mu", "biasCorErr_mu"]], on="CID", how="left")
-df = df.dropna(subset=["zHD", "mB", "x1", "c", "HOST_LOGMASS", "MUERR", "x0", "DLR"])
+df = df.dropna(subset=["zHD", "mB", "x1", "c", "HOST_LOGMASS", "MUERR", "x0", "DDLR"])
 
 print(f"Final dataset contains {len(df)} supernovae.")
-print(df[["CID", "HOST_LOGMASS", "DLR"]].head())
+print(df[["CID", "HOST_LOGMASS", "DDLR"]].head())
 
 # PHYSICS
 df = calculate_physics(df)
 
 # SPLIT DATA BASED ON ANGULAR SEPARATION
-angsep_threshold = df["DLR"].median()  
+# angsep_threshold = df["DDLR"].median()  
 
-age_split = df["DLR"].median()
-close_df = df[df["DLR"] < angsep_threshold]
-far_df = df[df["DLR"] >= angsep_threshold]
+# age_split = df["DDLR"].median()
+# close_df = df[df["DDLR"] < angsep_threshold]
+# far_df = df[df["DDLR"] >= angsep_threshold]
 
 #Uncomment to use the lower and upper quartiles instead of the median
-# q25 = df['DLR'].quantile(0.25)
-# close_df = df[df['DLR'] <= q25]
+q25 = df['DDLR'].quantile(0.25)
+close_df = df[df['DDLR'] <= q25]
 
-# q75 = df['DLR'].quantile(0.75)
-# far_df = df[df['DLR'] > q75]
+q75 = df['DDLR'].quantile(0.75)
+far_df = df[df['DDLR'] > q75]
 
 def compute_mass_step(group_df, title_suffix):
     """Compute and plot Hubble residual vs host mass for a given group."""

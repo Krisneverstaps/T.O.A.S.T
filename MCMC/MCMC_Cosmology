@@ -17,8 +17,6 @@ ROOT_DIR   = SCRIPT_DIR.parent
 hd_path   = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 cov_path  = download_file("4_DISTANCES_COVMAT/STAT+SYS.npz")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
-
-# HD file: z, cov, order for covariance
 inv_cov_full = load_cov_npz(cov_path)
 
 H0_FIXED     = 70.0
@@ -50,34 +48,30 @@ mask = (
     (df["biasCor_mu"].notna())
 ).values
 
-# 4. Apply the mask to BOTH the dataframe and the matrix
+
 df = df[mask].reset_index(drop=True)
 inv_cov = inv_cov_full[mask][:, mask]
-
-# Now, both will have the same size (688)
 print(f"Data size: {len(df)}")
 print(f"Matrix size: {inv_cov.shape}")
 
 # DATA ARRAYS
-z      = df["zHD"].values
+z = df["zHD"].values
 mu_err = df["MUERR"].values
 df['total_err'] = np.sqrt(df['MUERR']**2 + df['biasCorErr_mu']**2)
-yerr   = df['total_err'].values
+yerr = df['total_err'].values
 
-# mB FROM FLUX AMPLITUDE
-mB         = -2.5 * np.log10(df["x0"].values)
-df["mB"]   = mB
-x1         = df["x1"].values
-c          = df["c"].values
+
+mB = -2.5 * np.log10(df["x0"].values)
+df["mB"] = mB
+x1 = df["x1"].values
+c = df["c"].values
 biasCor_mu = df["biasCor_mu"].values
-GAMMA      = 0.033  # fixed (0.033 +/- 0.008)
+GAMMA = 0.033 
 print(f"Loaded {len(z)} SNe. MU = mB + alpha*x1 - beta*c + gamma/2 - biasCor_mu - M_B")
-
 
 # Tripp formula
 def mu_tripp(alpha, beta, M_B):
     return mB + (alpha * x1) - (beta * c) + GAMMA / 2.0 - biasCor_mu - M_B
-
 _, _, M_B_fid, alpha_fid, beta_fid = FIDUCIAL
 df["mu_obs"] = mu_tripp(alpha_fid, beta_fid, M_B_fid)
 print("MU = mB + alpha*x1 - beta*c + gamma/2 - biasCor_mu - M_B")

@@ -49,7 +49,7 @@ df_hd = df_hd.dropna(subset=["CID_num", "zHD", "MU", "MUERR"]).copy()
 df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.999999]
 
 
-# Merge Euclid (Mass + DLR) with DES HD
+# Merge Euclid with DES HD
 df = df_euclid[["DES_ID_x", "HOST_LOGMASS", "DLR"]].merge(
     df_hd[["CID_num", "CID", "zHD", "MU", "MUERR", "PROBIA_BEAMS"]],
     left_on="DES_ID_x", right_on="CID_num", how="inner"
@@ -66,7 +66,7 @@ print(df[["CID", "HOST_LOGMASS", "DLR"]].head())
 df = calculate_physics(df)
 
 # SPLIT DATA BASED ON ANGULAR SEPARATION
-angsep_threshold = df["DLR"].median()  # arcminutes
+angsep_threshold = df["DLR"].median()  
 
 age_split = df["DLR"].median()
 close_df = df[df["DLR"] < angsep_threshold]

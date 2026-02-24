@@ -19,7 +19,7 @@ def compute_dlr_vis_row(row):
     sn_ra = row["right_ascension"]
     sn_dec = row["declination"]
 
-    # Sersic parameters
+    # parameters
     a = row["sersic_sersic_vis_radius"]          # semi-major axis
     q = row["sersic_sersic_vis_axis_ratio"]      # axis ratio b/a
     pa_deg = row["sersic_angle"]                 # degrees (East of North)
@@ -47,7 +47,7 @@ def compute_dlr_vis_row(row):
 
     return r_ellipse
 
-# Apply to full dataframe
+# Apply to full data
 def add_dlr_column(df):
     df["DLR"] = df.apply(compute_dlr_vis_row, axis=1)
     return df
@@ -55,8 +55,6 @@ def add_dlr_column(df):
 
 
 if __name__ == "__main__":
-
-
     euclid_morph_path = (ROOT_DIR / "data" / "Euclid_Morphology.csv").resolve()
 
 # LOAD EUCLID DATA

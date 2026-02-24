@@ -50,7 +50,7 @@ df_hd = df_hd.dropna(subset=["CID_num", "zHD", "MU", "MUERR"]).copy()
 df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.999999]
 
 
-# Merge Euclid (Mass + concentration) with DES HD
+# Merge Euclid with DES HD
 df = df_euclid[["DES_ID_x", "HOST_LOGMASS", "concentration"]].merge(
     df_hd[["CID_num", "CID", "zHD", "MU", "MUERR", "PROBIA_BEAMS"]],
     left_on="DES_ID_x", right_on="CID_num", how="inner"
@@ -158,7 +158,7 @@ def compute_mass_step(group_df, title_suffix):
     # Save plot
     out_dir = Path(__file__).parent.parent / "outputs"
     out_dir.mkdir(exist_ok=True)
-    plt.savefig(out_dir / f"hubble_residual_vs_mass_{title_suffix.replace(' ', '_')}.png", dpi=150)
+    plt.savefig(out_dir / f"EucConcNoBias_vs_mass_{title_suffix.replace(' ', '_')}.png", dpi=150)
     plt.show()
 
 # Compute mass steps for both groups

@@ -1,97 +1,47 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+import pandas
 from pathlib import Path
 from data_handler import download_file, load_snana_format
 from analysis_tools import calculate_physics, get_weighted_stats, run_stats, binned_weighted_mean
 
-# EUCLID CSV PATH 
-SCRIPT_DIR = Path(__file__).resolve().parent
-ROOT_DIR = SCRIPT_DIR.parent
-euclid_path = (ROOT_DIR / "data" / "Q1 euclid data.csv").resolve()
-euclid_morph_path = (ROOT_DIR / "data" / "Euclid+data.csv").resolve()
-
-# LOAD EUCLID DATA
-df_euclid = pd.read_csv(euclid_path)
-df_euclid["DES_ID_x"] = pd.to_numeric(df_euclid["DES_ID_x"], errors="coerce")
-
-m_col = "logmass" if "logmass" in df_euclid.columns else "HOST_LOGMASS"
-df_euclid["HOST_LOGMASS"] = pd.to_numeric(df_euclid[m_col], errors="coerce")
-
-
-#Load morphology and remove the commas from numbers like 1,000,000
-df_morph = pd.read_csv(euclid_morph_path, thousands=',')
-
-
-# 1onvert to strings and remove non-numeric characters (excecpt ID)
-df_morph["DES_ID_x"] = df_morph["DES_ID_x"].astype(str).str.replace('"', '').str.strip()
-df_morph["DES_ID_x"] = pd.to_numeric(df_morph["DES_ID_x"], errors="coerce")
-
-# Convert d_DLR to numeric 
-df_morph["d_DLR"] = pd.to_numeric(df_morph["d_DLR"], errors="coerce")
-
-# ADD d_DLR TO EUCLID DATA 
-df_euclid = df_euclid[["DES_ID_x", "HOST_LOGMASS"]].merge(
-    df_morph[["DES_ID_x", "d_DLR"]], 
-    on="DES_ID_x", 
-    how="inner"
-)
-
-# LOAD DES DATA
+# LOAD DATA
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
-df_hd = load_snana_format(hd_path)
-df_meta = load_snana_format(meta_path)
-
-# Prepare DES HD
-df_hd["CID_num"] = pd.to_numeric(df_hd["CID"], errors="coerce")
-df_hd = df_hd.dropna(subset=["CID_num", "zHD", "MU", "MUERR"]).copy()
-df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.95]
-
-
-# Merge Euclid with DES HD
-df = df_euclid[["DES_ID_x", "HOST_LOGMASS", "d_DLR"]].merge(
-    df_hd[["CID_num", "CID", "zHD", "MU", "MUERR", "PROBIA_BEAMS"]],
-    left_on="DES_ID_x", right_on="CID_num", how="inner"
+df = load_snana_format(hd_path).merge(
+    load_snana_format(meta_path)[['CID', 'HOST_LOGMASS', 'mB', 'x1', 'c', 'HOST_DDLR', "x0", "biasCor_mu", "biasCorErr_mu"]],
+    on='CID'
 )
-
-# Merge with Metadata
-df = df.merge(df_meta[["CID", "mB", "x1", "c", "x0", "biasCor_mu", "biasCorErr_mu"]], on="CID", how="left")
-df = df.dropna(subset=["zHD", "mB", "x1", "c", "HOST_LOGMASS", "MUERR", "x0", "d_DLR"])
-
-print(f"Final dataset contains {len(df)} supernovae.")
-print(df[["CID", "HOST_LOGMASS", "d_DLR"]].head())
+df = df[df['PROBIA_BEAMS'] > 0.95].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGMASS', 'MUERR', 'HOST_DDLR', "x0"])
 
 # PHYSICS
 df = calculate_physics(df)
 
-# SPLIT DATA BASED ON ANGULAR SEPARATION
-angsep_threshold = df["d_DLR"].median()  
-
-age_split = df["d_DLR"].median()
-close_df = df[df["d_DLR"] < 1]
-far_df = df[df["d_DLR"] >= 1]
+# SPLIT DATA BASED ON DDLR
+df = df[df["HOST_DDLR"] < 4]   # Restricting to SNe that are within the region of the galaxy
+close_df = df[df["HOST_DDLR"] < 1] # 1 represents the SNe is on the edge of the galaxy
+far_df = df[df["HOST_DDLR"] >= 1]
 
 #Uncomment to use the lower and upper quartiles instead of the median
-# q25 = df['d_DLR'].quantile(0.25)
-# close_df = df[df['d_DLR'] <= q25]
+# q25 = df['HOST_DDLR'].quantile(0.25)
+# close_df = df[df['HOST_DDLR'] <= q25]
 
-# q75 = df['d_DLR'].quantile(0.75)
-# far_df = df[df['d_DLR'] > q75]
+# q75 = df['HOST_DDLR'].quantile(0.75)
+# far_df = df[df['HOST_DDLR'] >= q75]
 
 def compute_mass_step(group_df, title_suffix):
     """Compute and plot Hubble residual vs host mass for a given group."""
     low_df = group_df[group_df['HOST_LOGMASS'] < 10]
     high_df = group_df[group_df['HOST_LOGMASS'] >= 10]
 
-    w_mean_low, w_err_low = get_weighted_stats(low_df['hubble_residual'], low_df['MUERR'], low_df["biasCorErr_mu"])
-    w_mean_high, w_err_high = get_weighted_stats(high_df['hubble_residual'], high_df['MUERR'], high_df["biasCorErr_mu"])
+    w_mean_low, w_err_low = get_weighted_stats(low_df['hubble_residual'], low_df['MUERR'], low_df['biasCorErr_mu'])
+    w_mean_high, w_err_high = get_weighted_stats(high_df['hubble_residual'], high_df['MUERR'], high_df['biasCorErr_mu'])
     mass_step = w_mean_high - w_mean_low
     stats = run_stats(low_df['hubble_residual'], high_df['hubble_residual'])
 
     # BINNED WEIGHTED MEAN
     bin_centers, bin_means, bin_errs = binned_weighted_mean(
-        group_df['HOST_LOGMASS'].values, group_df['hubble_residual'].values, group_df['MUERR'].values, group_df["biasCorErr_mu"].values, bins=6
+        group_df['HOST_LOGMASS'].values, group_df['hubble_residual'].values, group_df['MUERR'].values, group_df['biasCorErr_mu'], bins=6
     )
     valid = ~np.isnan(bin_means)
 
@@ -151,8 +101,8 @@ def compute_mass_step(group_df, title_suffix):
     ax.scatter(group_df['HOST_LOGMASS'], group_df['hubble_residual'], alpha=0.2, color='gray', s=15, label='SNe Ia')
     ax.errorbar(bin_centers[valid], bin_means[valid], yerr=bin_errs[valid], fmt='o', color='blue',
                 capsize=4, capthick=2, markersize=8, label='Binned weighted mean')
-    ax.hlines(w_mean_low, group_df['HOST_LOGMASS'].min(), 10, colors='red', lw=2, label=f'Low mass: {w_mean_low:.3f} ± {w_err_low:.3f}')
-    ax.hlines(w_mean_high, 10, group_df['HOST_LOGMASS'].max(), colors='orange', lw=2, label=f'High mass: {w_mean_high:.3f} ± {w_err_high:.3f}')
+    ax.hlines(w_mean_low, 8, 10, colors='red', lw=2, label=f'Low mass: {w_mean_low:.3f} ± {w_err_low:.3f}')
+    ax.hlines(w_mean_high, 10, 12, colors='orange', lw=2, label=f'High mass: {w_mean_high:.3f} ± {w_err_high:.3f}')
     ax.fill_between([8, 10], w_mean_low - w_err_low, w_mean_low + w_err_low, color='red', alpha=0.2)
     ax.fill_between([10, 12], w_mean_high - w_err_high, w_mean_high + w_err_high, color='orange', alpha=0.2)
     ax.axvline(10, color='black', linestyle='--')
@@ -166,7 +116,7 @@ def compute_mass_step(group_df, title_suffix):
     # Save plot
     out_dir = Path(__file__).parent.parent / "outputs"
     out_dir.mkdir(exist_ok=True)
-    plt.savefig(out_dir / f"Euc_vs_angsep_{title_suffix.replace(' ', '_')}.png", dpi=150)
+    plt.savefig(out_dir / f"DES_mass_step_{title_suffix.replace(' ', '_')}.png", dpi=150)
     plt.show()
 
 # Compute mass steps for both groups

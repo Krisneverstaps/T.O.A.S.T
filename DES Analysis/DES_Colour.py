@@ -91,5 +91,5 @@ plt.tight_layout()
 
 out_dir = Path(__file__).parent.parent / "outputs"
 out_dir.mkdir(exist_ok=True)
-plt.savefig(out_dir / "hubble_residual_vs_host_color.png", dpi=150)
+plt.savefig(out_dir / "DES_HRvsColour.png", dpi=150)
 plt.show()

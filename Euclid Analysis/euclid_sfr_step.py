@@ -112,5 +112,5 @@ plt.tight_layout()
 
 out_dir = ROOT_DIR / "outputs"
 out_dir.mkdir(exist_ok=True)
-plt.savefig(out_dir / "euclid_hubble_residual_vs_sfr_step.png", dpi=150)
+plt.savefig(out_dir / "Euc_HRvsSFR.png", dpi=150)
 plt.show()

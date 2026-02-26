@@ -160,7 +160,7 @@ def compute_mass_step(group_df, title_suffix):
     # Save plot
     out_dir = Path(__file__).parent.parent / "outputs"
     out_dir.mkdir(exist_ok=True)
-    plt.savefig(out_dir / f"EucConc_vs_mass_{title_suffix.replace(' ', '_')}.png", dpi=150)
+    plt.savefig(out_dir / f"Euc_Morph_conc(withbias).png", dpi=150)
     plt.show()
 
 # Compute mass steps for both groups

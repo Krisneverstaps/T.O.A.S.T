@@ -13,17 +13,17 @@ ARCSEC_PER_DEG = 3600.0
 
 def compute_dlr_vis_row(row):
     # Positions
-    host_ra = row["HOST_RA"]
-    host_dec = row["HOST_DEC"]
+    host_ra = row["right_ascension"] # Euclids value
+    host_dec = row["declination"] # Euclids value
 
-    sn_ra = row["right_ascension"]
-    sn_dec = row["declination"]
+    sn_ra = row["SN_RA"]
+    sn_dec = row["SN_DEC"]
 
     # parameters
-    circ = row["sersic_sersic_vis_radius"]          # semi-major axis
+    circ = row["sersic_sersic_vis_radius"]
     q = row["sersic_sersic_vis_axis_ratio"]      # axis ratio b/a
     pa_deg = row["sersic_angle"]                 # degrees (East of North)
-    a = circ / np.sqrt(q)
+    a = circ / np.sqrt(q)          # semi-major axis
     # If invalid, returns NaN
     if pd.isna(a) or pd.isna(q) or a <= 0 or q <= 0:
         return np.nan
@@ -43,27 +43,30 @@ def compute_dlr_vis_row(row):
     b = a * q
 
     # Elliptical normalised radius
-    r_ellipse = np.sqrt((x_prime / a)**2 + (y_prime / b)**2)
+    d_DLR = np.sqrt((x_prime / a)**2 + (y_prime / b)**2)
 
+    angular_sep = np.sqrt(delta_ra**2 + delta_dec**2)
 
+    DDLR = angular_sep / d_DLR
 
-    return r_ellipse
+    return pd.Series({'DDLR': DDLR, 'd_DLR': d_DLR, 'ANGSEP': angular_sep})
 
 # Apply to full data
-def add_dlr_column(df):
-    df["DDLR"] = df.apply(compute_dlr_vis_row, axis=1)
+def add_dlr_columns(df):
+    results = df.apply(compute_dlr_vis_row, axis=1)
+    df = pd.concat([df, results], axis=1)
     return df
 
 
 
 if __name__ == "__main__":
-    euclid_morph_path = (ROOT_DIR / "data" / "Euclid_Morphology.csv").resolve()
+    euclid_morph_path = (ROOT_DIR / "data" / "Morphology_With_SN_Coords.csv").resolve()
 
 # LOAD EUCLID DATA
     df = pd.read_csv(euclid_morph_path)
 
-    df = add_dlr_column(df)
+    df = add_dlr_columns(df)
 
     print(df[["object_id", "DDLR"]].head())
 
-    df.to_csv("EuclidDDLR.csv", index=False)
+    df.to_csv("Euclid+data.csv", index=False)

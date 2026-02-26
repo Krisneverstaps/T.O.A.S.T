@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from data_handler import download_file, load_snana_format
-from analysis_tools import calculate_physics, get_weighted_stats, run_stats, binned_weighted_mean
+from analysis_tools import calculate_physics2, get_weighted_stats2, run_stats, binned_weighted_mean2
 
 # EUCLID CSV PATH
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -34,20 +34,20 @@ df = df.merge(df_meta[["CID", "mB", "x1", "c", "x0", "biasCor_mu"]], on="CID", h
 df = df.dropna(subset=["zHD", "mB", "x1", "c", "SFH_AGE", "MUERR", "x0"])
 
 # PHYSICS
-df = calculate_physics(df)
+df = calculate_physics2(df)
 
 # AGE STEP (split at median SFH age)
 age_split = df["SFH_AGE"].median()
 low_df = df[df["SFH_AGE"] < age_split]
 high_df = df[df["SFH_AGE"] >= age_split]
 
-w_mean_low, w_err_low = get_weighted_stats(low_df["hubble_residual"], low_df["MUERR"])
-w_mean_high, w_err_high = get_weighted_stats(high_df["hubble_residual"], high_df["MUERR"])
+w_mean_low, w_err_low = get_weighted_stats2(low_df["hubble_residual"], low_df["MUERR"])
+w_mean_high, w_err_high = get_weighted_stats2(high_df["hubble_residual"], high_df["MUERR"])
 age_step = w_mean_high - w_mean_low
 stats = run_stats(low_df["hubble_residual"], high_df["hubble_residual"])
 
 # BINNED WEIGHTED MEAN
-bin_centers, bin_means, bin_errs = binned_weighted_mean(
+bin_centers, bin_means, bin_errs = binned_weighted_mean2(
     df["SFH_AGE"].values, df["hubble_residual"].values, df["MUERR"].values, bins=6
 )
 valid = ~np.isnan(bin_means)

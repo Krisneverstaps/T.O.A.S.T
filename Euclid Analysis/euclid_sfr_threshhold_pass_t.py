@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from data_handler import download_file, load_snana_format
-from analysis_tools import calculate_physics, get_weighted_stats, run_stats, binned_weighted_mean
+from analysis_tools import calculate_physics2, get_weighted_stats, run_stats, binned_weighted_mean
 
 # EUCLID CSV PATH
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -34,11 +34,11 @@ df = df.merge(df_meta[["CID", "mB", "x1", "c", "x0", "biasCor_mu"]], on="CID", h
 df = df.dropna(subset=["zHD", "mB", "x1", "c", "SFR", "MUERR", "x0"])
 
 # PHYSICS
-df = calculate_physics(df)
+df = calculate_physics2(df)
 
-# ------------------------------------------------------------
-# SCAN LOWER SFR CUT TO FIND SIGNIFICANCE THRESHOLD
-# ------------------------------------------------------------
+
+# REQUIRE T TEST SIGNIFICANCE
+
 alpha = 0.05
 min_n_per_bin = 5
 

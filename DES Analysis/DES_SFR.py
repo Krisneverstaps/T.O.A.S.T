@@ -2,29 +2,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 from data_handler import download_file, load_snana_format
-from analysis_tools import calculate_physics, get_weighted_stats, run_stats, binned_weighted_mean
+from analysis_tools import calculate_physics2, get_weighted_stats2, run_stats, binned_weighted_mean2
 
 # LOAD DATA
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
 meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
 df = load_snana_format(hd_path).merge(load_snana_format(meta_path)[['CID', 'HOST_LOGSFR', 'mB', 'x1', 'c', "x0", "biasCor_mu"]], on='CID')
-df = df[df['PROBIA_BEAMS'] > 0.999999].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGSFR', 'MUERR', "x0"])
+df = df[df['PROBIA_BEAMS'] > 0.95].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_LOGSFR', 'MUERR', "x0"])
 
 # PHYSICS
-df = calculate_physics(df)
+df = calculate_physics2(df)
+
+df = df[df["HOST_LOGSFR"] > -5]
 
 # SFR STEP 
 sfr_split = df['HOST_LOGSFR'].median()
 low_df = df[df['HOST_LOGSFR'] < sfr_split]
 high_df = df[df['HOST_LOGSFR'] >= sfr_split]
 
-w_mean_low, w_err_low = get_weighted_stats(low_df['hubble_residual'], low_df['MUERR'])
-w_mean_high, w_err_high = get_weighted_stats(high_df['hubble_residual'], high_df['MUERR'])
+w_mean_low, w_err_low = get_weighted_stats2(low_df['hubble_residual'], low_df['MUERR'])
+w_mean_high, w_err_high = get_weighted_stats2(high_df['hubble_residual'], high_df['MUERR'])
 sfr_step = w_mean_high - w_mean_low
 stats = run_stats(low_df['hubble_residual'], high_df['hubble_residual'])
 
 # BINNED WEIGHTED MEAN
-bin_centers, bin_means, bin_errs = binned_weighted_mean(
+bin_centers, bin_means, bin_errs = binned_weighted_mean2(
     df['HOST_LOGSFR'].values, df['hubble_residual'].values, df['MUERR'].values, bins=6
 )
 valid = ~np.isnan(bin_means)

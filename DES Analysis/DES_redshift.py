@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from astropy.cosmology import FlatLambdaCDM
 from data_handler import download_file, load_snana_format
-from analysis_tools import OMEGA_M, binned_weighted_mean
+from analysis_tools import OMEGA_M, binned_weighted_mean2
 
 # LOAD DATA (HD file only — use MU from HD so residuals are centered at zero, like lab 23.1)
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
@@ -17,7 +17,7 @@ df["hubble_residual"] = df["MU"] - df["mu_expected"]
 scatter = np.std(df["hubble_residual"])
 
 # BINNED WEIGHTED MEAN (no per-point error bars)
-bin_centers, bin_means, bin_errs = binned_weighted_mean(
+bin_centers, bin_means, bin_errs = binned_weighted_mean2(
     df["zHD"].values, df["hubble_residual"].values, df["MUERR"].values, bins=6
 )
 valid = ~np.isnan(bin_means)

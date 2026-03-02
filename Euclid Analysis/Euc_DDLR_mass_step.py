@@ -66,7 +66,7 @@ print(df[["CID", "HOST_LOGMASS", "DDLR"]].head())
 df = calculate_physics(df)
 
 # SPLIT DATA BASED ON DDLR
-df = df[df["DDLR"] < 4]   # Restricting to SNe that are close to galaxy
+df = df[df["DDLR"] < 4]   # Restricting to SNe that are within the region of the galaxy
 close_df = df[df["DDLR"] < 1]  # 1 represents a SNe on the edge of the galaxy
 far_df = df[df["DDLR"] >= 1]
 

@@ -24,7 +24,6 @@ df_des_coords = df_des_coords.rename(columns={
 })
 
 
-# This attaches the SN RA and DEC to the morphology rows based on the ID
 df_merged = df_morph.merge(
     df_des_coords[["SNID", "SN_RA", "SN_DEC"]],
     left_on="DES_ID_x",
@@ -32,10 +31,10 @@ df_merged = df_morph.merge(
     how="inner" # Inner ensures we only keep rows where we have both morphology and coordinates
 )
 
-# Remove the SNID column
+
 df_merged = df_merged.drop(columns=["SNID"])
 
-# 5. PRINT SUMMARY AND SAVE
+
 print(f"Successfully merged {len(df_merged)} rows.")
 print(df_merged[["DES_ID_x", "SN_RA", "SN_DEC"]].head())
 

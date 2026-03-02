@@ -7,81 +7,96 @@ from pathlib import Path
 from data_handler import download_file, load_snana_format
 from analysis_tools import calculate_physics
 
-# PATHS
-SCRIPT_DIR = Path(__file__).resolve().parent
-ROOT_DIR = SCRIPT_DIR.parent
-euclid_path = (ROOT_DIR / "data" / "Q1 euclid data.csv").resolve()
+# SETUP PATHS
+ROOT_DIR = Path(__file__).resolve().parent.parent
+data_dir = ROOT_DIR / "data"
 
-euclid_path = Path(__file__).resolve().parent.parent / "data" / "Q1 euclid data.csv"
-hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
-meta_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv")
+euclid_cols = [
+    "DES_ID_x", 
+    "HOST_LOGMASS", 
+    "phz_pp_mode_sfhage", 
+    "phz_pp_mode_stellarmetallicity"
+]
 
-# LOAD DES
-df_hd = load_snana_format(hd_path).query("PROBIA_BEAMS > 0.95")
-df_hd["CID_num"] = pd.to_numeric(df_hd["CID"], errors="coerce")
-df_meta = load_snana_format(meta_path)[['CID', 'mB', 'x1', 'c', 'x0', 'biasCor_mu', 'biasCorErr_mu']]
+df_props = pd.read_csv(data_dir / "Q1 euclid data.csv", usecols=euclid_cols)
+df_morph = pd.read_csv(data_dir / "Euclid+data.csv", usecols=["DES_ID_x", "DDLR"], thousands=',')
 
-# DICTIONARY FOR PROPERTIES
-e_cols = {
-    "DES_ID_x": "CID_num",
-    #"phz_pp_mode_sfr": "SFR",
+
+df_props = df_props.rename(columns={
     "phz_pp_mode_sfhage": "AGE",
     "phz_pp_mode_stellarmetallicity": "METALLICITY",
     "HOST_LOGMASS": "LOGMASS"
-}
-df_euclid = pd.read_csv(euclid_path)[list(e_cols.keys())].rename(columns=e_cols)
-df_euclid["CID_num"] = pd.to_numeric(df_euclid["CID_num"], errors="coerce")
+})
 
-# MERGE
-df = (df_euclid.merge(df_hd, on="CID_num")
-               .merge(df_meta, on="CID")
-               .dropna(subset=["zHD", "mB", "x1", "c", "AGE", "METALLICITY", "LOGMASS", "MUERR"]))
+
+for d in [df_morph, df_props]:
+    d["DES_ID_x"] = pd.to_numeric(d["DES_ID_x"].astype(str).str.replace('"', '').str.strip(), errors="coerce")
+
+# Combine Euclid Data
+euclid_all = df_morph.merge(df_props, on="DES_ID_x", how="inner").dropna()
+
+
+df_hd = load_snana_format(download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv"))
+df_meta = load_snana_format(download_file("4_DISTANCES_COVMAT/DES-Dovekie_Metadata.csv"))
+
+df_hd["CID_num"] = pd.to_numeric(df_hd["CID"], errors="coerce")
+df_hd = df_hd[df_hd["PROBIA_BEAMS"] > 0.95]
+
+
+df = (
+    euclid_all
+    .merge(df_hd[["CID_num", "CID", "zHD", "MU", "MUERR"]], left_on="DES_ID_x", right_on="CID_num")
+    .merge(df_meta[["CID", "mB", "x1", "c", "x0", "biasCor_mu", "biasCorErr_mu"]], on="CID")
+    .dropna(subset=["zHD", "LOGMASS", "AGE", "METALLICITY", "DDLR"])
+)
 
 df = calculate_physics(df)
 
 # DATA ARRAYS 
 X = df[['LOGMASS', 'AGE', 'METALLICITY']].values
 y = df['hubble_residual'].values
+ddlr = df['DDLR'].values
 df['total_err'] = np.sqrt(df['MUERR']**2 + df['biasCorErr_mu']**2)
 yerr = df['total_err'].values
 splits = np.median(X, axis=0)
-data = (X, y, yerr, splits)
+data = (X, y, yerr, ddlr, splits)
 
 # Sum of steps for Mass, Age, Metallicity, and SFR
-def model(theta, X, splits):
+def model(theta, X, ddlr, splits):
     # theta: g1=MassStep, g2=AgeStep, g3=MetalStep, g4=SFRStep, T0=Offset
-    g1, g2, g3, T0 = theta
-    m1 = np.where(X[:, 0] >= splits[0], g1, 0) # Mass
-    m2 = np.where(X[:, 1] >= splits[1], g2, 0) # Age
-    m3 = np.where(X[:, 2] >= splits[2], g3, 0) # Metallicity
+    g1, g2, g3, T0, sig = theta
+    fading = np.exp(-0.5 * (ddlr/sig)**2)
+    m1 = np.where(X[:, 0] >= splits[0], g1*fading, 0) # Mass
+    m2 = np.where(X[:, 1] >= splits[1], g2*fading, 0) # Age
+    m3 = np.where(X[:, 2] >= splits[2], g3*fading, 0) # Metallicity
     return m1 + m2 + m3 + T0
 
 # this shows how wellthe model matches the residuals
-def lnlike(theta, X, y, yerr, splits):
-    mod = model(theta, X, splits)
+def lnlike(theta, X, y, yerr, ddlr, splits):
+    mod = model(theta, X, ddlr, splits)
     return -0.5 * np.sum(((y - mod) / yerr)**2)
 
 # Priors constraining step sizes (large for no bias)
 def lnprior(theta):
-    g1, g2, g3, T0 = theta
+    g1, g2, g3, T0, sig = theta
     if (-0.5 < g1 < 0.5 and -0.5 < g2 < 0.5 and 
-        -0.5 < g3 < 0.5  and -1.0 < T0 < 1.0):
+        -0.5 < g3 < 0.5  and -1.0 < T0 < 1.0 and 0.00001 < sig < 10):
         return 0.0
     return -np.inf
 
 # LOG-PROBABILITY
-def lnprob(theta, X, y, yerr, splits):
+def lnprob(theta, X, y, yerr, ddlr, splits):
     lp = lnprior(theta)
     if not np.isfinite(lp):
         return -np.inf
-    return lp + lnlike(theta, X, y, yerr, splits)
+    return lp + lnlike(theta, X, y, yerr, ddlr, splits)
 
 
 # Initialise MCMC
 nwalkers = 64
-niter = 15000
+niter = 50000
 # Initial guesses,  tiny steps (0.02) and zero offset
-initial = np.array([0.02, 0.02, 0.02, 0.0])
+initial = np.array([0.02, 0.02, 0.02, 0.0, 1.5])
 ndim = len(initial)
 p0 = [initial + 1e-5 * np.random.randn(ndim) for i in range(nwalkers)]
 
@@ -127,7 +142,8 @@ fig = corner.corner(
     labels=[r'$\gamma_\mathrm{Mass}$',
             r'$\gamma_\mathrm{Age}$',
             r'$\gamma_\mathrm{Metal}$',
-            r'$T_0$'],
+            r'$T_0$',
+            r'$\sigma_\mathrm{decay}$'],
     truths=truths, quantiles=[0.16, 0.5, 0.84], show_titles=True, title_fmt=".3f", 
     title_kwargs={"fontsize": 12}, label_kwargs={"fontsize": 14}, smooth=1.0
 )
@@ -142,6 +158,5 @@ for i, row in summary_df.iterrows():
 
 out_dir = ROOT_DIR / "outputs"
 out_dir.mkdir(exist_ok=True)
-plt.savefig(out_dir / "MCMC_Corner_PlotNEW.png", dpi=150)
+plt.savefig(out_dir / "MCMC_Corner_Plot_DDLR.png", dpi=150)
 plt.show()
-

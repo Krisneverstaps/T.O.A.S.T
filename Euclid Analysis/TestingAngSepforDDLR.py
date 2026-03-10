@@ -25,12 +25,12 @@ df_merged = df_euclid.merge(
     right_on="CID",
     how="inner"
 )
-
-
+df_merged = df_merged[df_merged["DDLR"] < 4]
+df_merged = df_merged[df_merged["HOST_DDLR"] < 4]
 df_merged = df_merged.dropna(subset=["DDLR", "HOST_DDLR"])
 
 
-print(df_merged)
+print(df_merged[["DDLR", "HOST_DDLR"]])
 
 plt.figure(figsize=(8, 8))
 
@@ -62,7 +62,23 @@ print(f"Correlation coefficient: {correlation:.4f}")
 
 plt.tight_layout()
 
+from scipy.stats import spearmanr
+
+spearman = spearmanr(df_merged["HOST_DDLR"], df_merged["DDLR"])
+print(spearman)
+
+
+
 out_dir = ROOT_DIR / "outputs"
 out_dir.mkdir(exist_ok=True)
 plt.savefig(out_dir / "DDLRComparison.png", dpi=150)
+plt.show()
+
+
+ratio = df_merged["DDLR"] / df_merged["HOST_DDLR"]
+ratio = ratio[np.isfinite(ratio)]
+
+plt.hist(ratio, bins=40)
+plt.xlabel("Euclid DDLR / DES DDLR")
+plt.ylabel("Count")
 plt.show()

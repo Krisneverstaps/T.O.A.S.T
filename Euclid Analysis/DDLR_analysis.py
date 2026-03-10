@@ -20,10 +20,10 @@ def compute_ddlr(row):
     sn_dec = row["SN_DEC"]
 
     # parameters
-    circ = row["sersic_sersic_vis_radius"]  #circularised half light radius
+    a = row["sersic_sersic_vis_radius"]  
     q = row["sersic_sersic_vis_axis_ratio"]      # axis ratio b/a
     pa_deg = row["sersic_angle"]                 # degrees (East of North)
-    a = circ / np.sqrt(q)          # semi-major axis (long radius)
+    # a = circ / np.sqrt(q)          # semi-major axis (long radius)
     # If invalid, returns NaN
     if pd.isna(a) or pd.isna(q) or a <= 0 or q <= 0:
         return np.nan

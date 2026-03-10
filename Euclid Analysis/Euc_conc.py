@@ -9,7 +9,7 @@ from analysis_tools import calculate_physics, get_weighted_stats, run_stats, bin
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = SCRIPT_DIR.parent
 euclid_path = (ROOT_DIR / "data" / "Q1 euclid data.csv").resolve()
-euclid_morph_path = (ROOT_DIR / "data" / "with_dlr.csv").resolve()
+euclid_morph_path = (ROOT_DIR / "data" / "Euclid+data.csv").resolve()
 
 # LOAD EUCLID DATA
 df_euclid = pd.read_csv(euclid_path)

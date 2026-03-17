@@ -34,10 +34,10 @@ def compute_ddlr(row):
     delta_dec = (sn_dec - host_dec) * ARCSEC_PER_DEG
 
     # Rotate into galaxy frame
-    theta = np.radians(pa_deg)
+    theta = np.radians(90 - pa_deg)
 
-    x_prime = delta_ra * np.sin(theta) + delta_dec * np.cos(theta)  #x' is distance along the galaxies major axis
-    y_prime = delta_ra * np.cos(theta) - delta_dec * np.sin(theta)  #y' is distances along galaxy's minor axis
+    x_prime = delta_ra * np.cos(theta) + delta_dec * np.sin(theta)  #x' is distance along the galaxies major axis
+    y_prime = -delta_ra * np.sin(theta) + delta_dec * np.cos(theta)  #y' is distances along galaxy's minor axis
 
     # Semi-minor axis
     b = a * q #(short radius)

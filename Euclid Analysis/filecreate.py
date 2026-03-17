@@ -11,7 +11,7 @@ hosts = load_snana_format(hosts)
 
 
 
-# Clean column names
+# Cleannames
 galaxies.columns = galaxies.columns.str.strip()
 hosts.columns = hosts.columns.str.strip()
 
@@ -23,7 +23,7 @@ merged = galaxies.merge(
     how="left"
 )
 
-# Select the final columns
+# final columns
 result = merged[
     [
         "Euclid_ID_x",
@@ -39,7 +39,7 @@ result = merged[
     ]
 ]
 
-# Rename for clarity
+# Rename
 result = result.rename(columns={
     "Euclid_ID_x": "Euclid_ID",
     "DES_ID_x": "DES_ID"

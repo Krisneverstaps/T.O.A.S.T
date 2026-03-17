@@ -15,16 +15,19 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = SCRIPT_DIR.parent
 
 fits_file = (ROOT_DIR / "data" /
-             "60095881.60095881-16.IRAC.1.mosaic (1).fits").resolve()
+             "-519790213285648287.fits").resolve()
 
 catalog_path = (ROOT_DIR / "data" / "Euclid+data.csv").resolve()
 
 df = pd.read_csv(catalog_path)
 print(df[["Euclid_ID_x", "SN_RA", "SN_DEC", "DDLR", "right_ascension", "declination" ]].head())
 
-sn_ra_target = 53.471634
-sn_dec_target = -29.379313
-   
+sn_ra_target = 51.978981
+sn_dec_target = -28.564434
+
+
+
+
 # Match SN
 match = df.loc[
     (np.isclose(df["SN_RA"], sn_ra_target, atol=1e-6)) &
@@ -64,18 +67,24 @@ science_hdu = None
 with fits.open(fits_file, memmap=True) as hdul:
 
     for hdu in hdul:
-        if hdu.name.endswith("SCI") and hdu.data is not None:
-            try:
-                wcs = WCS(hdu.header)
-                px, py = wcs.world_to_pixel(target)
+        print("Checking:", hdu.name)
 
-                if (0 <= px < hdu.data.shape[1]) and (0 <= py < hdu.data.shape[0]):
-                    science_hdu = hdu
-                    print("Found galaxy in extension:", hdu.name)
-                    break
+        if hdu.data is None:
+            continue
 
-            except Exception:
-                continue
+        try:
+            wcs = WCS(hdu.header)
+            px, py = wcs.world_to_pixel(target)
+
+            print(" -> pixel:", px, py, "shape:", hdu.data.shape)
+
+            if (0 <= px < hdu.data.shape[1]) and (0 <= py < hdu.data.shape[0]):
+                print("FOUND in", hdu.name)
+                science_hdu = hdu
+                break
+
+        except Exception as e:
+            print(" -> WCS failed:", e)
 
     if science_hdu is None:
         raise RuntimeError("Galaxy not found in any SCI extension.")
@@ -94,11 +103,10 @@ with fits.open(fits_file, memmap=True) as hdul:
 # Interpret R_vis as semi-major axis
 a = R_vis
 # circularised instead, use:
-# a = R_vis / np.sqrt(q)
+#a = R_vis / np.sqrt(q)
 
 b = a * q
 
-theta = np.radians(pa_deg)
 t = np.linspace(0, 2*np.pi, 500)
 
 # Ellipse in galaxy frame
@@ -106,12 +114,15 @@ x_prime = a * np.cos(t)
 y_prime = b * np.sin(t)
 
 # Rotate back to sky frame
-delta_ra = x_prime * np.sin(theta) + y_prime * np.cos(theta)
-delta_dec = x_prime * np.cos(theta) - y_prime * np.sin(theta)
+theta_math = np.radians(90 - pa_deg)
 
-# Convert arcsec offsets to degrees
-ra_ellipse = ra0 + delta_ra / (3600.0 * np.cos(np.radians(dec0)))
-dec_ellipse = dec0 + delta_dec / 3600.0
+# Rotate internal coordinates to sky offsets (delta_ra, delta_dec)
+delta_ra = x_prime * np.cos(theta_math) - y_prime * np.sin(theta_math)
+delta_dec = x_prime * np.sin(theta_math) + y_prime * np.cos(theta_math)
+
+# 4. Convert to Degrees
+ra_ellipse = ra0 + (delta_ra / 3600.0) / np.cos(np.radians(dec0))
+dec_ellipse = dec0 + (delta_dec / 3600.0)
 
 
 # PLOT

@@ -11,6 +11,7 @@ from analysis_tools import calculate_physics
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = SCRIPT_DIR.parent
 euclid_path = (ROOT_DIR / "data" / "Q1 euclid data.csv").resolve()
+euclid_data_file_path = (ROOT_DIR / "data" / "Euclid+data.csv").resolve()
 
 euclid_path = Path(__file__).resolve().parent.parent / "data" / "Q1 euclid data.csv"
 hd_path = download_file("4_DISTANCES_COVMAT/DES-Dovekie_HD.csv")
@@ -32,10 +33,16 @@ e_cols = {
 df_euclid = pd.read_csv(euclid_path)[list(e_cols.keys())].rename(columns=e_cols)
 df_euclid["CID_num"] = pd.to_numeric(df_euclid["CID_num"], errors="coerce")
 
+df_ddlr = pd.read_csv(euclid_data_file_path)[['DES_ID_x', 'DDLR']]
+df_ddlr = df_ddlr.rename(columns={'DES_ID_x': 'CID_num'})
+df_ddlr["CID_num"] = pd.to_numeric(df_ddlr["CID_num"], errors="coerce")
+
 # MERGE
 df = (df_euclid.merge(df_hd, on="CID_num")
                .merge(df_meta, on="CID")
-               .dropna(subset=["zHD", "mB", "x1", "c", "AGE", "METALLICITY", "LOGMASS", "MUERR"]))
+               .merge(df_ddlr, on="CID_num") 
+               .dropna(subset=["zHD", "mB", "x1", "c", "AGE", "METALLICITY", "LOGMASS", "MUERR", "DDLR"]))
+
 
 df = calculate_physics(df)
 
@@ -89,7 +96,7 @@ p0 = [initial + 1e-5 * np.random.randn(ndim) for i in range(nwalkers)]
 def main(p0, nwalkers, niter, ndim, lnprob, data):
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=data)
     print("Running burn-in...")
-    p0, _, _ = sampler.run_mcmc(p0, 5000) # 5000 step burn-in
+    p0, _, _ = sampler.run_mcmc(p0, 3000) # 3000 step burn-in
     sampler.reset()
     print("Running production...")
     pos, prob, state = sampler.run_mcmc(p0, niter)

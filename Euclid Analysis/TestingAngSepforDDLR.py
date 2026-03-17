@@ -27,6 +27,7 @@ df_merged = df_euclid.merge(
 )
 df_merged = df_merged[df_merged["DDLR"] < 4]
 df_merged = df_merged[df_merged["HOST_DDLR"] < 4]
+df_merged = df_merged[df_merged["HOST_DDLR"] > -3]
 df_merged = df_merged.dropna(subset=["DDLR", "HOST_DDLR"])
 
 

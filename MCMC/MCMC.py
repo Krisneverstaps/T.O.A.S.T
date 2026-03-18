@@ -65,14 +65,22 @@ def model(theta, X, splits):
 
 # this shows how wellthe model matches the residuals
 def lnlike(theta, X, y, yerr, splits):
-    mod = model(theta, X, splits)
-    return -0.5 * np.sum(((y - mod) / yerr)**2)
+    g1, g2, g3, T0, sig_int = theta
+    
+    mod = model(theta[:4], X, splits) # Use first 4 params 
+    
+    # Add intrinsic scatter to measurement error
+    sigma2 = yerr**2 + sig_int**2
+    
+    return -0.5 * np.sum(((y - mod)**2 / sigma2) + np.log(2 * np.pi * sigma2))
 
 # Priors constraining step sizes (large for no bias)
 def lnprior(theta):
-    g1, g2, g3, T0 = theta
+    g1, g2, g3, T0, sig_int = theta
+
     if (-0.5 < g1 < 0.5 and -0.5 < g2 < 0.5 and 
-        -0.5 < g3 < 0.5  and -1.0 < T0 < 1.0):
+        -0.5 < g3 < 0.5 and -1.0 < T0 < 1.0 and 
+        0.001 < sig_int < 0.3): # scatter
         return 0.0
     return -np.inf
 
@@ -88,7 +96,7 @@ def lnprob(theta, X, y, yerr, splits):
 nwalkers = 64
 niter = 15000
 # Initial guesses,  tiny steps (0.02) and zero offset
-initial = np.array([0.02, 0.02, 0.02, 0.0])
+initial = np.array([0.02, 0.02, 0.02, 0.0, 0.1])
 ndim = len(initial)
 p0 = [initial + 1e-5 * np.random.randn(ndim) for i in range(nwalkers)]
 
@@ -120,7 +128,7 @@ def summarize_samples(samples, labels):
         })
     return pd.DataFrame(summary)
 
-labels_plain = ["gamma_mass", "gamma_age", "gamma_metal", "T0"]
+labels_plain = ["gamma_mass", "gamma_age", "gamma_metal", "T0", "sig_int"]
 summary_df = summarize_samples(new_samples, labels_plain)
 
 print("\nMCMC Parameter Summary:")
@@ -134,7 +142,8 @@ fig = corner.corner(
     labels=[r'$\gamma_\mathrm{Mass}$',
             r'$\gamma_\mathrm{Age}$',
             r'$\gamma_\mathrm{Metal}$',
-            r'$T_0$'],
+            r'$T_0$',
+            r'$\sigma_\mathrm{int}$'],
     truths=truths, quantiles=[0.16, 0.5, 0.84], show_titles=True, title_fmt=".3f", 
     title_kwargs={"fontsize": 12}, label_kwargs={"fontsize": 14}, smooth=1.0
 )

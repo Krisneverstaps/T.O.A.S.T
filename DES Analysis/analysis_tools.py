@@ -38,7 +38,7 @@ def calculate_physics2(df, alpha=ALPHA, beta=BETA, m0=M0_AVG, omega_m=OMEGA_M):
     return df
 
 
-def get_weighted_stats(residuals, observational_errors, bias_errors, sigma_int=0.11):
+def get_weighted_stats(residuals, observational_errors, bias_errors, sigma_int=0.017):
     """
     Calculates weighted mean using both observational error and intrinsic scatter.
     """
@@ -52,7 +52,7 @@ def get_weighted_stats(residuals, observational_errors, bias_errors, sigma_int=0
     
     return weighted_mean, uncertainty
 
-def get_weighted_stats2(residuals, observational_errors, sigma_int=0.11):
+def get_weighted_stats2(residuals, observational_errors, sigma_int=0.017):
     """
     Calculates weighted mean using both observational error and intrinsic scatter.
     """
@@ -88,7 +88,7 @@ def binned_weighted_mean(x, y, observational_errors, bias_errors,  bins=6, sigma
             means[i], errs[i] = get_weighted_stats(y[mask], observational_errors[mask], bias_errors[mask], sigma_int=sigma_int)
     return centers, means, errs
 
-def binned_weighted_mean2(x, y, observational_errors,  bins=6, sigma_int=0.11):
+def binned_weighted_mean2(x, y, observational_errors,  bins=6, sigma_int=0.017):
     """Returns bin centers, weighted means, and uncertainties per bin."""
     edges = np.linspace(x.min(), x.max(), bins + 1)
     centers = (edges[:-1] + edges[1:]) / 2

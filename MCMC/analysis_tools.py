@@ -23,7 +23,7 @@ def calculate_physics(df, alpha=ALPHA, beta=BETA, m0=M0_AVG, omega_m=OMEGA_M):
     df['hubble_residual'] = df['mu_no_mass'] - df['mu_expected']
     return df
 
-def get_weighted_stats(residuals, observational_errors, sigma_int=0.11):
+def get_weighted_stats(residuals, observational_errors, sigma_int=0.017):
     """
     Calculates weighted mean using both observational error and intrinsic scatter.
     """
@@ -43,7 +43,7 @@ def run_stats(low_res, high_res):
     ks_stat, ks_p = ks_2samp(low_res, high_res)
     return {"t_stat": t_stat, "t_p": t_p, "ks_stat": ks_stat, "ks_p": ks_p}
 
-def binned_weighted_mean(x, y, observational_errors, bins=6, sigma_int=0.11):
+def binned_weighted_mean(x, y, observational_errors, bins=6, sigma_int=0.017):
     """Returns bin centers, weighted means, and uncertainties per bin."""
     edges = np.linspace(x.min(), x.max(), bins + 1)
     centers = (edges[:-1] + edges[1:]) / 2

@@ -52,7 +52,7 @@ def get_weighted_stats(residuals, observational_errors, bias_errors, sigma_int=0
     
     return weighted_mean, uncertainty
 
-def get_weighted_stats2(residuals, observational_errors, sigma_int=0.11):
+def get_weighted_stats2(residuals, observational_errors, sigma_int=0.017):
     """
     Calculates weighted mean using both observational error and intrinsic scatter.
     """
@@ -72,7 +72,7 @@ def run_stats(low_res, high_res):
     ks_stat, ks_p = ks_2samp(low_res, high_res)
     return {"t_stat": t_stat, "t_p": t_p, "ks_stat": ks_stat, "ks_p": ks_p}
 
-def binned_weighted_mean(x, y, observational_errors, bias_errors,  bins=6, sigma_int=0.11):
+def binned_weighted_mean(x, y, observational_errors, bias_errors,  bins=6, sigma_int=0.017):
     """Returns bin centers, weighted means, and uncertainties per bin."""
     edges = np.linspace(x.min(), x.max(), bins + 1)
     centers = (edges[:-1] + edges[1:]) / 2
@@ -86,7 +86,7 @@ def binned_weighted_mean(x, y, observational_errors, bias_errors,  bins=6, sigma
             means[i], errs[i] = get_weighted_stats(y[mask], observational_errors[mask], bias_errors[mask], sigma_int=sigma_int)
     return centers, means, errs
 
-def binned_weighted_mean2(x, y, observational_errors,  bins=6, sigma_int=0.11):
+def binned_weighted_mean2(x, y, observational_errors,  bins=6, sigma_int=0.017):
     """Returns bin centers, weighted means, and uncertainties per bin."""
     edges = np.linspace(x.min(), x.max(), bins + 1)
     centers = (edges[:-1] + edges[1:]) / 2

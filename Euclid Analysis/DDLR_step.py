@@ -63,9 +63,9 @@ df = df.dropna(subset=["zHD", "mB", "x1", "c", "HOST_LOGMASS", "MUERR", "x0", "D
 df = calculate_physics2(df)
 
 # FILTER
-df = df[df["DDLR"] < 1]
+df = df[df["DDLR"] < 4]
 
-def compute_ddlr_step(group_df, title_suffix, threshold=0.5):
+def compute_ddlr_step(group_df, title_suffix, threshold=1):
     """Compute and plot Hubble residual vs DDLR for a given group."""
     # SPLIT DATA BASED ON THRESHOLD
     low_df = group_df[group_df['DDLR'] < threshold]
@@ -160,5 +160,4 @@ def compute_ddlr_step(group_df, title_suffix, threshold=0.5):
     plt.savefig(out_dir / f"Euc_DDLR_step_{title_suffix.replace(' ', '_')}.png", dpi=150)
     plt.show()
 
-# Run the calculation (example using threshold 1.0)
 compute_ddlr_step(df, "Full Sample")

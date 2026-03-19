@@ -24,11 +24,11 @@ df = df[df['PROBIA_BEAMS'] > 0.95].dropna(subset=['zHD', 'mB', 'x1', 'c', 'HOST_
 df = calculate_physics2(df)
 
 # FILTER DATA BASED ON HOST_DDLR
-df = df[df["HOST_DDLR"] < 1]   # Restricting to SNe within the galaxy region
+df = df[df["HOST_DDLR"] < 4]   # Restricting to SNe within the galaxy region
 df = df[df["HOST_DDLR"] > -5]  # Removes the -9 placeholder values
 
 
-def compute_HOST_DDLR_step(group_df, title_suffix, threshold=0.5):
+def compute_HOST_DDLR_step(group_df, title_suffix, threshold=1):
     """Compute and plot Hubble residual vs HOST_DDLR with full summary output."""
     
     # SPLIT DATA BASED ON THRESHOLD

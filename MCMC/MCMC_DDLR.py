@@ -89,7 +89,7 @@ def lnprior(theta):
     lp = -0.5 * (T0 / 0.05)**2 
     
     # Tighten sig_decay
-    if (0.1 < sig_decay < 3.0 and 0.01 < sig_int < 0.2):
+    if (0.1 < sig_decay < 3.0 and 0.01 < sig_int < 0.1):
         return lp
     
     return -np.inf
@@ -102,7 +102,7 @@ def lnprob(theta, X_raw, y, yerr, ddlr):
 # MCMC running
 data_args = (X_center, y, yerr, ddlr)
 nwalkers, niter = 64, 20000
-initial = np.array([-0.05, 0.00, 0.02, 0.0, 1.0, 0.1])
+initial = np.array([-0.05, 0.00, 0.02, 0.0, 1.0, 0.015])
 ndim = len(initial)
 p0 = [initial + 1e-3 * np.random.randn(ndim) for i in range(nwalkers)]
 

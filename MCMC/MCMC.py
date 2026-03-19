@@ -69,7 +69,7 @@ def lnlike(theta, X, y, yerr, splits):
     
     mod = model(theta[:4], X, splits) # Use first 4 params 
     
-    # Add intrinsic scatter to measurement error
+    # I have added instrinsic scatter
     sigma2 = yerr**2 + sig_int**2
     
     return -0.5 * np.sum(((y - mod)**2 / sigma2) + np.log(2 * np.pi * sigma2))
@@ -94,7 +94,7 @@ def lnprob(theta, X, y, yerr, splits):
 
 # Initialise MCMC
 nwalkers = 64
-niter = 15000
+niter = 25000
 # Initial guesses,  tiny steps (0.02) and zero offset
 initial = np.array([0.02, 0.02, 0.02, 0.0, 0.1])
 ndim = len(initial)
